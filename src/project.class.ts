@@ -1,5 +1,6 @@
 // has no default export
 const git = require("nodegit");
+import * as fs from "fs";
 import { spinner } from "./utility";
 
 export class Project {
@@ -7,7 +8,7 @@ export class Project {
   type: string;
   theme: string;
   private repo: string;
-  private dir: string;
+  private dir: fs.PathLike;
 
   constructor(name: string, type: string, theme: string, repo: string) {
     this.name = name;
@@ -30,7 +31,8 @@ export class Project {
 
   protected async applyTheme() {
     spinner("start", `Applying theme: ${this.theme}`);
-
-    spinner("stop", `DONE \n`);
+    fs.copyFile("./styles/default.css", this.dir, () => {
+      spinner("stop", `DONE \n`);
+    });
   }
 }
