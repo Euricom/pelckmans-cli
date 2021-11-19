@@ -3,6 +3,9 @@
   "description": "Pelckmans CLI for generating static websites with netlify backend",
   "version": "0.0.1",
   "author": "Euricom",
+  "bin": {
+    "pelckmans-cli": "./bin/run"
+  },
   "bugs": "https://github.com/Euricom/pelckmans-cli/issues",
   "dependencies": {
     "@oclif/command": "^1",
@@ -32,6 +35,10 @@
   "engines": {
     "node": ">=8.0.0"
   },
+  "files": [
+    "/bin",
+    "/lib"
+  ],
   "homepage": "https://github.com/Euricom/pelckmans-cli",
   "keywords": [
     "oclif"
