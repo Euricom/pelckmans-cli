@@ -30,10 +30,27 @@ export class Project {
 
   public async init() {
     await this.fetchFromGit();
-    await this.applyTheme();
+    //await this.applyTheme();
+  }
+
+  // If Dir is not empty, create same dir with a suffix like: (xx-2, xx-3)
+  protected setWriteableDir(): void {
+    if (fs.existsSync(this.dir)) {
+      // add suffix
+      let memDir = this.dir;
+      let suffix = 1;
+      do {
+        memDir = `${this.dir}-${suffix}`;
+        suffix++;
+      } while (fs.existsSync(memDir));
+      this.dir = memDir;
+      console.log("found! ", memDir);
+    }
   }
 
   protected async fetchFromGit() {
+    this.setWriteableDir();
+
     spinner("start", `Fetching ${this.repo} from Git`);
     await git.Clone(this.repo, this.dir);
     spinner("stop", `DONE \n`);
@@ -41,16 +58,13 @@ export class Project {
 
   protected async applyTheme() {
     spinner("start", `Applying theme: ${this.theme}`);
-    return fs.rename(
-      this.theme,
-      path.resolve(this.dir, "styles.css"),
-      (err) => {
-        if (!err) {
-          spinner("stop", `DONE \n`);
-        } else {
-          this.logger(err);
-        }
+    return fs.rename(this.theme, path.resolve(this.dir, "style.css"), (err) => {
+      if (!err) {
+        spinner("stop", `DONE \n`);
+      } else {
+        this.logger(err);
+        throw err;
       }
-    );
+    });
   }
 }

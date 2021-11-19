@@ -14,11 +14,11 @@ class PelckmansCli extends Command {
   // TODO: read from json file
   protected boilerplates: IOption = {
     memoria: "https://github.com/PsySolix/memoria-boilerplate",
-    demo: "https://github.com/PsySolix/demo-boilerplate",
+    other: "https://github.com/PsySolix/demo-boilerplate",
   };
   protected themes: IOption = {
-    minimal: "./styles/minimal.css",
     default: "./styles/default.css",
+    minimal: "./styles/minimal.css",
   };
 
   async run() {
@@ -53,7 +53,14 @@ class PelckmansCli extends Command {
 
     await project.init();
 
-    this.log(`Generated project ${JSON.stringify(project)} \n`);
+    // this.log(`Generated project ${JSON.stringify(project)} \n`);
+
+    // Deployment
+    const { deploy }: { deploy: string } = await inquiry(
+      "deploy",
+      "Select a deployment target:",
+      ["vercel", "none"]
+    );
   }
 }
 
