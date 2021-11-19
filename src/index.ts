@@ -46,8 +46,9 @@ class PelckmansCli extends Command {
     const project = new Project(
       projectName.toLowerCase(),
       projectType.toLowerCase(),
-      theme.toLowerCase(),
-      this.boilerplates[projectType]
+      this.themes[theme],
+      this.boilerplates[projectType],
+      this.log
     );
 
     await project.init();
