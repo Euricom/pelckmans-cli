@@ -23,10 +23,10 @@ class PelckmansCli extends Command {
 
   async run() {
     // Get projectName
-    const projectName = await cli.prompt("What is the project name?");
+    const name = await cli.prompt("What is the project name?");
     // Get projectType
-    const { projectType }: any = await inquiry(
-      "projectType",
+    const { type }: { type: string } = await inquiry(
+      "type",
       "Select a project type",
       Object.keys(this.boilerplates).map((key) => ({
         name: key,
@@ -44,10 +44,10 @@ class PelckmansCli extends Command {
 
     // Generate project
     const project = new Project(
-      projectName.toLowerCase(),
-      projectType.toLowerCase(),
+      name.toLowerCase(),
+      type.toLowerCase(),
       this.themes[theme],
-      this.boilerplates[projectType],
+      this.boilerplates[type],
       this.log
     );
 
