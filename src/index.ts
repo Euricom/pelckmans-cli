@@ -24,6 +24,7 @@ class PelckmansCli extends Command {
   async run() {
     // Get projectName
     const name = await cli.prompt("What is the project name?");
+
     // Get projectType
     const { type }: { type: string } = await inquiry(
       "type",
