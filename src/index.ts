@@ -1,4 +1,4 @@
-import { Command, flags } from "@oclif/command";
+import { Command } from "@oclif/command";
 import cli from "cli-ux";
 import { Project } from "./project.class";
 import { inquiry } from "./utility";
@@ -13,6 +13,7 @@ class PelckmansCli extends Command {
 
   // TODO: read from json file
   protected boilerplates: IOption = {
+    nextjs: "https://github.com/PsySolix/next-boilerplate",
     memoria: "https://github.com/PsySolix/memoria-boilerplate",
     other: "https://github.com/PsySolix/demo-boilerplate",
   };
@@ -54,14 +55,12 @@ class PelckmansCli extends Command {
 
     await project.init();
 
-    // this.log(`Generated project ${JSON.stringify(project)} \n`);
-
     // Deployment
-    const { deploy }: { deploy: string } = await inquiry(
-      "deploy",
-      "Select a deployment target:",
-      ["vercel", "none"]
-    );
+    // const { deploy }: { deploy: string } = await inquiry(
+    //   "deploy",
+    //   "Select a deployment target:",
+    //   ["vercel", "none"]
+    // );
   }
 }
 

@@ -1,9 +1,10 @@
 // has no default export
-
 const git = require("nodegit");
 import * as fs from "fs";
 import * as path from "path";
 import { spinner } from "./utility";
+
+const { spawn } = require("child_process");
 
 export class Project {
   name: string;
@@ -31,7 +32,10 @@ export class Project {
   public async init() {
     this.setWriteableDir();
     await this.fetchFromGit();
-    await this.applyTheme();
+    // Does project has a package.json?
+    await this.installDependancies();
+    // Yes, do a NPM install
+    //await this.applyTheme();
   }
 
   // If Dir is not empty, create same dir with a suffix like: (xx-2, xx-3)
@@ -44,6 +48,34 @@ export class Project {
         suffix++;
       } while (fs.existsSync(memDir));
       this.dir = memDir;
+    }
+  }
+
+  protected async installDependancies(): Promise<void> {
+    const packageJsonFile = path.resolve(this.dir, "package.json");
+    if (fs.existsSync(packageJsonFile)) {
+      process.chdir(this.dir);
+      this.logger(`Package.json file exists ${packageJsonFile}`);
+      this.logger(`Installing dependancies`);
+
+      return new Promise((resolve, reject) => {
+        const npmInstall = spawn("npm", ["i"]);
+        npmInstall.stdout.setEncoding("utf8");
+        npmInstall.stdout.on("data", (chunk: Buffer) => {
+          this.logger(chunk.toString());
+        });
+        npmInstall.stderr.on("data", (data: Buffer) => {
+          this.logger(` error : ${data.toString()}`);
+        });
+        npmInstall.on("close", (code: number) => {
+          this.logger(`got code: ${code}`);
+          if (code == 0) {
+            resolve();
+          } else {
+            reject();
+          }
+        });
+      });
     }
   }
 
