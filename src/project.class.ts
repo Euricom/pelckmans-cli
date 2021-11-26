@@ -2,6 +2,7 @@
 const git = require("nodegit");
 import * as fs from "fs";
 import * as path from "path";
+import { exit } from "process";
 import { spinner } from "./utility";
 
 const { spawn } = require("child_process");
@@ -32,13 +33,26 @@ export class Project {
   public async init() {
     this.setWriteableDir();
     await this.fetchFromGit();
-    // Does project has a package.json?
     await this.installDependancies();
-    // Yes, do a NPM install
+    this.applyEnvVars();
     //await this.applyTheme();
   }
 
-  // If Dir is not empty, create same dir with a suffix like: (xx-2, xx-3)
+  /**
+   * Show error & exit
+   * @param msg Error message
+   * @param code Error code
+   */
+  protected triggerCliError(msg: string, code?: number) {
+    this.logger(msg);
+    exit(code ? code : 1);
+  }
+
+  /**
+   * Tries to get a writeable dir
+   * If Dir is not empty, create same dir with a suffix like: (xx-2, xx-3)
+   * If xx-10 is reached, then it stops trying
+   */
   protected setWriteableDir(): void {
     if (fs.existsSync(this.dir)) {
       let memDir = this.dir;
@@ -46,13 +60,19 @@ export class Project {
       do {
         memDir = `${this.dir}-${suffix}`;
         suffix++;
-      } while (fs.existsSync(memDir));
+      } while (suffix <= 10 && fs.existsSync(memDir));
       this.dir = memDir;
     }
   }
 
+  /**
+   * Installs the dependencies in the project dir (only if there is package.json present)
+   * @returns Promise to resolve when close event is returned on spawn cmd
+   */
   protected async installDependancies(): Promise<void> {
+    const cliDir = process.cwd();
     const packageJsonFile = path.resolve(this.dir, "package.json");
+
     if (fs.existsSync(packageJsonFile)) {
       process.chdir(this.dir);
       this.logger(`Package.json file exists ${packageJsonFile}`);
@@ -68,28 +88,38 @@ export class Project {
           this.logger(` error : ${data.toString()}`);
         });
         npmInstall.on("close", (code: number) => {
-          this.logger(`got code: ${code}`);
+          process.chdir(cliDir); // reset the cwd to the cli dir
           if (code == 0) {
             resolve();
           } else {
             reject();
+            this.triggerCliError("Error during dependency installation");
           }
         });
       });
     }
   }
-
+  /**
+   * Fetches the repo that is set through "new Project" (this.repo)
+   */
   protected async fetchFromGit() {
     spinner("start", `Fetching ${this.repo} and writing to ${this.dir}`);
     await git.Clone(this.repo, this.dir);
     spinner("stop", `DONE \n`);
   }
 
+  // TODO handle loading css files correctly in project
+  /**
+   * Makes a copy of the selected css file and moves (& renames) it to the project dir
+   * @returns Promise
+   */
   protected async applyTheme() {
     spinner("start", `Applying theme: ${this.theme}`);
     try {
       fs.copyFileSync(this.theme, `${this.theme}-copy`);
-    } catch (error) {}
+    } catch (error) {
+      this.triggerCliError((error as Error).message);
+    }
     return fs.rename(
       `${this.theme}-copy`,
       path.resolve(this.dir, "style.css"),
@@ -97,8 +127,7 @@ export class Project {
         if (!err) {
           spinner("stop", `DONE \n`);
         } else {
-          this.logger(err);
-          throw err;
+          this.triggerCliError(err.message);
         }
       }
     );
