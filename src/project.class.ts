@@ -34,10 +34,14 @@ export class Project {
   }
 
   public async init() {
-    this.setWriteableDir();
-    await this.fetchRepo();
-    await this.installDependancies();
-    this.applyEnvVars();
+    try {
+      this.setWriteableDir();
+      await this.fetchRepo();
+      await this.installDependancies();
+      this.applyEnvVars();
+    } catch (error) {
+      this.triggerCliError((error as Error).message);
+    }
     //await this.applyTheme();
   }
 
@@ -50,11 +54,11 @@ export class Project {
     const type = `PROJECT_TYPE=${this.type}`;
     const theme = `PROJECT_THEME=${this.themeName}`;
 
-    this.logger(`writing to ${this.dir}`);
+    this.logger(`Writing to ${this.dir}`);
     try {
       fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
-    } catch (err) {
-      this.triggerCliError((err as Error).message);
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -74,14 +78,18 @@ export class Project {
    * If xx-10 is reached, then it stops trying
    */
   protected setWriteableDir(): void {
-    if (fs.existsSync(this.dir)) {
-      let memDir = this.dir;
-      let suffix = 1;
-      do {
-        memDir = `${this.dir}-${suffix}`;
-        suffix++;
-      } while (suffix <= 10 && fs.existsSync(memDir));
-      this.dir = memDir;
+    try {
+      if (fs.existsSync(this.dir)) {
+        let memDir = this.dir;
+        let suffix = 1;
+        do {
+          memDir = `${this.dir}-${suffix}`;
+          suffix++;
+        } while (suffix <= 10 && fs.existsSync(memDir));
+        this.dir = memDir;
+      }
+    } catch (error) {
+      throw error;
     }
   }
 
@@ -92,31 +100,37 @@ export class Project {
   protected async installDependancies(): Promise<void> {
     const cliDir = process.cwd();
     const packageJsonFile = path.resolve(this.dir, "package.json");
+    try {
+      if (fs.existsSync(packageJsonFile)) {
+        process.chdir(this.dir);
+        this.logger(`Package.json file exists ${packageJsonFile}`);
+        this.logger(`Installing dependancies`);
 
-    if (fs.existsSync(packageJsonFile)) {
-      process.chdir(this.dir);
-      this.logger(`Package.json file exists ${packageJsonFile}`);
-      this.logger(`Installing dependancies`);
-
-      return new Promise((resolve, reject) => {
-        const npmInstall = spawn("npm", ["i"]);
-        npmInstall.stdout.setEncoding("utf8");
-        npmInstall.stdout.on("data", (chunk: Buffer) => {
-          this.logger(chunk.toString());
+        return new Promise((resolve, reject) => {
+          const npmInstall = spawn("npm", ["i"]);
+          npmInstall.stdout.setEncoding("utf8");
+          npmInstall.stdout.on("data", (chunk: Buffer) => {
+            this.logger(chunk.toString());
+          });
+          npmInstall.stderr.on("data", (data: Buffer) => {
+            this.logger(` error : ${data.toString()}`);
+            throw new Error(data.toString());
+          });
+          npmInstall.on("close", (code: number) => {
+            process.chdir(cliDir); // reset the cwd to the cli dir
+            if (code == 0) {
+              resolve();
+            } else {
+              reject();
+              throw new Error(
+                "Unknown error during dependency installation..."
+              );
+            }
+          });
         });
-        npmInstall.stderr.on("data", (data: Buffer) => {
-          this.logger(` error : ${data.toString()}`);
-        });
-        npmInstall.on("close", (code: number) => {
-          process.chdir(cliDir); // reset the cwd to the cli dir
-          if (code == 0) {
-            resolve();
-          } else {
-            reject();
-            this.triggerCliError("Error during dependency installation");
-          }
-        });
-      });
+      }
+    } catch (error) {
+      throw error;
     }
   }
   /**
@@ -124,7 +138,11 @@ export class Project {
    */
   protected async fetchRepo() {
     spinner("start", `Fetching ${this.repo} and writing to ${this.dir}`);
-    await git.Clone(this.repo, this.dir);
+    try {
+      await git.Clone(this.repo, this.dir);
+    } catch (error) {
+      throw error;
+    }
     spinner("stop", `DONE \n`);
   }
 
@@ -138,7 +156,7 @@ export class Project {
     try {
       fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
     } catch (error) {
-      this.triggerCliError((error as Error).message);
+      throw error;
     }
     return fs.rename(
       `${this.themePath}-copy`,

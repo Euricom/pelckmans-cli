@@ -24,8 +24,13 @@ class PelckmansCli extends Command {
 
   async run() {
     // Get projectName
-    const name = await cli.prompt("What is the project name?");
+    let name = await cli.prompt("What is the project name?");
 
+    if (name === "") {
+      // Will normally not happen, cli.prompt keeps asking when blank is given
+      this.warn("No name set! Will default to 'unknown-project'");
+      name = "unknown-project";
+    }
     // Get projectType
     const { type }: { type: string } = await inquiry(
       "type",
