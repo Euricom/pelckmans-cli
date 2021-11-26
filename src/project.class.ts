@@ -35,14 +35,28 @@ export class Project {
 
   public async init() {
     try {
+      spinner("start", `# Setting writable dir`);
       this.setWriteableDir();
+      spinner("stop", `DONE`);
+
+      spinner("start", `# Fetching ${this.repo} and writing to ${this.dir}`);
       await this.fetchRepo();
+      spinner("stop", `DONE`);
+
+      spinner("start", `# Installing dependencies for ${this.name}`);
       await this.installDependancies();
+      spinner("stop", `DONE`);
+
+      spinner("start", `# Applying theme: ${this.themePath}`);
+      await this.applyTheme();
+      spinner("stop", `DONE`);
+
+      spinner("start", `# Applying Environment variables: ${this.themePath}`);
       this.applyEnvVars();
+      spinner("stop", `DONE`);
     } catch (error) {
       this.triggerCliError((error as Error).message);
     }
-    //await this.applyTheme();
   }
 
   /**
@@ -54,12 +68,7 @@ export class Project {
     const type = `PROJECT_TYPE=${this.type}`;
     const theme = `PROJECT_THEME=${this.themeName}`;
 
-    this.logger(`Writing to ${this.dir}`);
-    try {
-      fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
-    } catch (error) {
-      throw error;
-    }
+    fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
   }
 
   /**
@@ -67,7 +76,7 @@ export class Project {
    * @param msg Error message
    * @param code Error code
    */
-  protected triggerCliError(msg: string, code?: number) {
+  protected triggerCliError(msg: string, code?: number): void {
     this.logger(msg);
     exit(code ? code : 1);
   }
@@ -78,18 +87,19 @@ export class Project {
    * If xx-10 is reached, then it stops trying
    */
   protected setWriteableDir(): void {
-    try {
-      if (fs.existsSync(this.dir)) {
-        let memDir = this.dir;
-        let suffix = 1;
-        do {
-          memDir = `${this.dir}-${suffix}`;
-          suffix++;
-        } while (suffix <= 10 && fs.existsSync(memDir));
-        this.dir = memDir;
+    if (fs.existsSync(this.dir)) {
+      let memDir = this.dir;
+      let suffix = 1;
+      do {
+        memDir = `${this.dir}-${suffix}`;
+        suffix++;
+      } while (suffix <= 10 && fs.existsSync(memDir));
+      if (fs.existsSync(memDir)) {
+        throw new Error(
+          `No suitable directory has been found for ${this.name}`
+        );
       }
-    } catch (error) {
-      throw error;
+      this.dir = memDir;
     }
   }
 
@@ -100,50 +110,31 @@ export class Project {
   protected async installDependancies(): Promise<void> {
     const cliDir = process.cwd();
     const packageJsonFile = path.resolve(this.dir, "package.json");
-    try {
-      if (fs.existsSync(packageJsonFile)) {
-        process.chdir(this.dir);
-        this.logger(`Package.json file exists ${packageJsonFile}`);
-        this.logger(`Installing dependancies`);
 
-        return new Promise((resolve, reject) => {
-          const npmInstall = spawn("npm", ["i"]);
-          npmInstall.stdout.setEncoding("utf8");
-          npmInstall.stdout.on("data", (chunk: Buffer) => {
-            this.logger(chunk.toString());
-          });
-          npmInstall.stderr.on("data", (data: Buffer) => {
-            this.logger(` error : ${data.toString()}`);
-            throw new Error(data.toString());
-          });
-          npmInstall.on("close", (code: number) => {
-            process.chdir(cliDir); // reset the cwd to the cli dir
-            if (code == 0) {
-              resolve();
-            } else {
-              reject();
-              throw new Error(
-                "Unknown error during dependency installation..."
-              );
-            }
-          });
+    if (fs.existsSync(packageJsonFile)) {
+      process.chdir(this.dir);
+      return new Promise((resolve, reject) => {
+        const npmInstall = spawn("npm", ["i"]);
+        npmInstall.stderr.on("data", (data: Buffer) => {
+          throw new Error(data.toString());
         });
-      }
-    } catch (error) {
-      throw error;
+        npmInstall.on("close", (code: number) => {
+          process.chdir(cliDir); // reset the cwd to the cli dir
+          if (code == 0) {
+            resolve();
+          } else {
+            reject();
+            throw new Error("Unknown error during dependency installation...");
+          }
+        });
+      });
     }
   }
   /**
    * Fetches the repo that is set through "new Project" (this.repo)
    */
-  protected async fetchRepo() {
-    spinner("start", `Fetching ${this.repo} and writing to ${this.dir}`);
-    try {
-      await git.Clone(this.repo, this.dir);
-    } catch (error) {
-      throw error;
-    }
-    spinner("stop", `DONE \n`);
+  protected async fetchRepo(): Promise<void> {
+    await git.Clone(this.repo, this.dir);
   }
 
   // TODO handle loading css files correctly in project
@@ -151,21 +142,14 @@ export class Project {
    * Makes a copy of the selected css file and moves (& renames) it to the project dir
    * @returns Promise
    */
-  protected async applyTheme() {
-    spinner("start", `Applying theme: ${this.themePath}`);
-    try {
-      fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
-    } catch (error) {
-      throw error;
-    }
+  protected async applyTheme(): Promise<void> {
+    fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
     return fs.rename(
       `${this.themePath}-copy`,
       path.resolve(this.dir, "style.css"),
       (err) => {
-        if (!err) {
-          spinner("stop", `DONE \n`);
-        } else {
-          this.triggerCliError(err.message);
+        if (err) {
+          throw err;
         }
       }
     );
