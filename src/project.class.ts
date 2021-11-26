@@ -10,7 +10,8 @@ const { spawn } = require("child_process");
 export class Project {
   name: string;
   type: string;
-  theme: string;
+  themePath: string;
+  themeName: string;
   logger: Function;
   private repo: string;
   private dir: string;
@@ -18,13 +19,15 @@ export class Project {
   constructor(
     name: string,
     type: string,
-    theme: string,
+    themePath: string,
+    themeName: string,
     repo: string,
     logFn: Function
   ) {
     this.name = name;
     this.type = type;
-    this.theme = theme;
+    this.themePath = themePath;
+    this.themeName = themeName;
     this.repo = repo;
     this.dir = `./__PROJECTS__/${name}`;
     this.logger = logFn;
@@ -32,10 +35,27 @@ export class Project {
 
   public async init() {
     this.setWriteableDir();
-    await this.fetchFromGit();
+    await this.fetchRepo();
     await this.installDependancies();
     this.applyEnvVars();
     //await this.applyTheme();
+  }
+
+  /**
+   * Adds a .env file (that the boilerplates use) which contains the following:
+   * PROJECT_TYPE
+   * PROJECT_THEME
+   */
+  protected applyEnvVars(): void {
+    const type = `PROJECT_TYPE=${this.type}`;
+    const theme = `PROJECT_THEME=${this.themeName}`;
+
+    this.logger(`writing to ${this.dir}`);
+    try {
+      fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
+    } catch (err) {
+      this.triggerCliError((err as Error).message);
+    }
   }
 
   /**
@@ -102,7 +122,7 @@ export class Project {
   /**
    * Fetches the repo that is set through "new Project" (this.repo)
    */
-  protected async fetchFromGit() {
+  protected async fetchRepo() {
     spinner("start", `Fetching ${this.repo} and writing to ${this.dir}`);
     await git.Clone(this.repo, this.dir);
     spinner("stop", `DONE \n`);
@@ -114,14 +134,14 @@ export class Project {
    * @returns Promise
    */
   protected async applyTheme() {
-    spinner("start", `Applying theme: ${this.theme}`);
+    spinner("start", `Applying theme: ${this.themePath}`);
     try {
-      fs.copyFileSync(this.theme, `${this.theme}-copy`);
+      fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
     } catch (error) {
       this.triggerCliError((error as Error).message);
     }
     return fs.rename(
-      `${this.theme}-copy`,
+      `${this.themePath}-copy`,
       path.resolve(this.dir, "style.css"),
       (err) => {
         if (!err) {

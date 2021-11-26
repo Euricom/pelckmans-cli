@@ -49,6 +49,7 @@ class PelckmansCli extends Command {
       name.toLowerCase(),
       type.toLowerCase(),
       this.themes[theme],
+      theme,
       this.boilerplates[type],
       this.log
     );
