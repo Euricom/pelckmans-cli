@@ -14,7 +14,6 @@
     "@types/nodegit": "^0.27.6",
     "@typescript-eslint/eslint-plugin": "^5.4.0",
     "@typescript-eslint/parser": "^5.4.0",
-    "dotenv": "^10.0.0",
     "nodegit": "^0.27.0",
     "tslib": "^1"
   },

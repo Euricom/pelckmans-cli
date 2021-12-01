@@ -1,6 +1,6 @@
 import {Command, flags} from '@oclif/command';
 import {Project} from './project';
-import {inquiry} from './utility';
+import {choose, input} from './utility';
 
 interface IOption {
   [key: string]: string;
@@ -33,9 +33,10 @@ class PelckmansCli extends Command {
   async run() {
     const {args} = this.parse(PelckmansCli);
     const name = args.name === '' ? 'unknown-project' : args.name;
+    let token = '';
 
     // Get projectType
-    const {type}: { type: string } = await inquiry(
+    const {type}: { type: string } = await choose(
       'type',
       'Select a project type',
       Object.keys(this.boilerplates).map((key) => ({
@@ -44,7 +45,7 @@ class PelckmansCli extends Command {
     );
 
     // Get theme
-    const {theme}: { theme: string } = await inquiry(
+    const {theme}: { theme: string } = await choose(
       'theme',
       'Select a theme',
       Object.keys(this.themes).map((key) => ({
@@ -53,11 +54,19 @@ class PelckmansCli extends Command {
     );
 
     // Deployment;
-    const {deploy}: { deploy: string } = await inquiry(
+    const {deploy}: { deploy: string } = await choose(
       'deploy',
       'Select a deployment target:',
       ['vercel', 'none'],
     );
+
+    if (deploy === 'vercel') {
+      const {vercelToken} = await input(
+        'vercelToken',
+        'Add a Vercel token (--token) that will be used for the deployment',
+        true);
+      token = vercelToken;
+    }
 
     // Generate project
     const project = new Project(
@@ -66,7 +75,7 @@ class PelckmansCli extends Command {
       this.themes[theme], // ThemePath
       theme, // ThemeName
       this.boilerplates[type], // Repo
-      deploy,
+      {provider: deploy, token},
       this.log,
     );
 

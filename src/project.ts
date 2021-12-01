@@ -13,7 +13,7 @@ const {spawn} = require('child_process');
 export class Project {
   log: Function;
   name: string;
-  deploy: string;
+  deploy: {provider: string; token:string; };
   themeName: string;
   themePath: string;
   type: string;
@@ -27,7 +27,7 @@ export class Project {
    * @param {string} themePath
    * @param {string} themeName
    * @param {string} repo
-   * @param {string} deploy
+   * @param {object} deploy
    * @param {function} logFn
    */
   constructor(
@@ -36,7 +36,7 @@ export class Project {
     themePath: string,
     themeName: string,
     repo: string,
-    deploy: string,
+    deploy: {provider: string; token:string; },
     logFn: Function,
   ) {
     this.name = name;
@@ -74,9 +74,9 @@ export class Project {
       this.applyEnvVars();
       spinner('stop', `DONE`);
 
-      spinner('start', `# Deploying with ${this.deploy}`);
+      spinner('start', `# Deploying to ${this.deploy.provider}`);
       await this.deployProject();
-      spinner('stop', 'DONE');
+      spinner('stop', 'DONE \n You can check the above url to see the generated project live!');
     } catch (error) {
       this.triggerCliError((error as Error).message);
     }
@@ -87,20 +87,22 @@ export class Project {
    * @protected
    */
   protected async deployProject(): Promise<void> {
-    if (this.deploy === 'none') {
+    const {token, provider} = this.deploy;
+    if (provider === 'none') {
       return;
     }
-    if (this.deploy === 'vercel') {
+    if (provider === 'vercel') {
       return new Promise((resolve, reject)=> {
-        const vercelToken = process.env.VERCEL_TOKEN || false;
-        if (!vercelToken) {
+        if (token === '') {
           reject(new Error('No Vercel token set'));
         }
-        const cliDir = process.cwd();
 
-        process.chdir(this.dir);
         let error = '';
-        const vercelCmds = exec(`npm i vercel && vercel --token ${vercelToken}`);
+        const cliDir = process.cwd();
+        process.chdir(this.dir);
+        const vercelCmds = exec(
+          `npm i vercel && vercel --token ${token} --confirm`
+        );
         vercelCmds.stdout.on('data', (data) => {
           this.log(data.toString());
         });
@@ -108,13 +110,13 @@ export class Project {
           error = data.toString();
         });
         vercelCmds.on('close', (code) => {
+          process.chdir(cliDir);
           if (code === 0) {
             resolve();
           } else {
             reject(new Error(error));
           }
         });
-        process.chdir(cliDir);
       });
     }
   }
@@ -176,10 +178,8 @@ export class Project {
           if (code == 0) {
             resolve();
           } else {
-            const err = new Error('Unknown error during dependency' +
-              ' installation...');
-            reject(err);
-            throw new Error('Unknown error during dependency installation...');
+            reject(new Error('Unknown error during dependency' +
+              ' installation...'));
           }
         });
       });

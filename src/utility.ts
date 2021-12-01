@@ -1,7 +1,7 @@
 import cli from 'cli-ux';
 import * as inquirer from 'inquirer';
 
-const inquiry = async <T>(
+const choose = async <T>(
   varName: string,
   promptMsg: string,
   choices: any[],
@@ -12,6 +12,19 @@ const inquiry = async <T>(
       message: promptMsg,
       type: 'list',
       choices,
+    },
+  ]);
+};
+const input = async <T>(
+  varName: string,
+  promptMsg: string,
+  secure?: boolean
+) : Promise<T> => {
+  return inquirer.prompt([
+    {
+      name: varName,
+      message: promptMsg,
+      type: secure ? 'password' : 'input',
     },
   ]);
 };
@@ -27,4 +40,4 @@ const spinner = (action: 'stop' | 'start', msg: string) => {
   }
 };
 
-export {spinner, inquiry};
+export {spinner, choose, input};
