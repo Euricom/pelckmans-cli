@@ -63,14 +63,14 @@ class PelckmansCli extends Command {
     const project = new Project(
       name.toLowerCase(),
       type.toLowerCase(),
-      this.themes[theme],
-      theme,
-      this.boilerplates[type],
+      this.themes[theme], // ThemePath
+      theme, // ThemeName
+      this.boilerplates[type], // Repo
       deploy,
       this.log,
     );
 
-    await project.init();
+    await project.generatProject();
   }
 }
 

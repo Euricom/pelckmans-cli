@@ -1,7 +1,5 @@
-// has no default export
-import {exec} from 'child_process';
-
 const git = require('nodegit');
+import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import {exit} from 'process';
@@ -54,7 +52,7 @@ export class Project {
   /**
    * Start up project generation
    */
-  public async init() {
+  public async generatProject() {
     try {
       spinner('start', `# Setting writable dir`);
       this.setWriteableDir();
@@ -93,11 +91,16 @@ export class Project {
       return;
     }
     if (this.deploy === 'vercel') {
-      const cliDir = process.cwd();
-      process.chdir(this.dir);
       return new Promise((resolve, reject)=> {
+        const vercelToken = process.env.VERCEL_TOKEN || false;
+        if (!vercelToken) {
+          reject(new Error('No Vercel token set'));
+        }
+        const cliDir = process.cwd();
+
+        process.chdir(this.dir);
         let error = '';
-        const vercelCmds = exec('npm i vercel && vercel');
+        const vercelCmds = exec(`npm i vercel && vercel --token ${vercelToken}`);
         vercelCmds.stdout.on('data', (data) => {
           this.log(data.toString());
         });
@@ -107,8 +110,9 @@ export class Project {
         vercelCmds.on('close', (code) => {
           if (code === 0) {
             resolve();
+          } else {
+            reject(new Error(error));
           }
-          reject(new Error(error));
         });
         process.chdir(cliDir);
       });

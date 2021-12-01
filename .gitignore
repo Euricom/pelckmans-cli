@@ -1,3 +1,4 @@
+.env
 *-debug.log
 *-error.log
 /.nyc_output
