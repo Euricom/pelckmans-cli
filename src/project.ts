@@ -1,5 +1,4 @@
 const git = require('nodegit');
-import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import {exit} from 'process';
@@ -52,7 +51,7 @@ export class Project {
   /**
    * Start up project generation
    */
-  public async generatProject() {
+  public async generateProject() {
     try {
       spinner('start', `# Setting writable dir`);
       this.setWriteableDir();
@@ -70,66 +69,30 @@ export class Project {
       await this.applyTheme();
       spinner('stop', `DONE`);
 
-      spinner('start', `# Applying Environment variables: ${this.themePath}`);
+      spinner('start', `# Applying Environment variables`);
       this.applyEnvVars();
       spinner('stop', `DONE`);
 
-      spinner('start', `# Deploying to ${this.deploy.provider}`);
-      await this.deployProject();
-      spinner('stop', 'DONE \n You can check the above url to see the generated project live!');
+      return this.dir;
     } catch (error) {
       this.triggerCliError((error as Error).message);
     }
   }
 
   /**
-   * Deploy project with selected deployment
-   * @protected
-   */
-  protected async deployProject(): Promise<void> {
-    const {token, provider} = this.deploy;
-    if (provider === 'none') {
-      return;
-    }
-    if (provider === 'vercel') {
-      return new Promise((resolve, reject)=> {
-        if (token === '') {
-          reject(new Error('No Vercel token set'));
-        }
-
-        let error = '';
-        const cliDir = process.cwd();
-        process.chdir(this.dir);
-        const vercelCmds = exec(
-          `npm i vercel && vercel --token ${token} --confirm`
-        );
-        vercelCmds.stdout.on('data', (data) => {
-          this.log(data.toString());
-        });
-        vercelCmds.stderr.on('data', (data) => {
-          error = data.toString();
-        });
-        vercelCmds.on('close', (code) => {
-          process.chdir(cliDir);
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(new Error(error));
-          }
-        });
-      });
-    }
-  }
-  /**
    * Adds a .env file (that the boilerplates use) which contains the following:
    * PROJECT_TYPE
    * PROJECT_THEME
+   * PROJECT_DEPLOY_TOKEN
+   * PROJECT_DEPLOY_PROVIDER
    */
   protected applyEnvVars(): void {
-    const type = `PROJECT_TYPE=${this.type}`;
-    const theme = `PROJECT_THEME=${this.themeName}`;
-
-    fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
+    fs.writeFileSync(`${this.dir}/.env`,
+      `PROJECT_TYPE=${this.type}\n`+
+      `PROJECT_THEME=${this.themeName}\n`+
+      `PROJECT_DEPLOY_TOKEN=${this.deploy.token}\n`+
+      `PROJECT_DEPLOY_PROVIDER=${this.deploy.provider}\n`
+    );
   }
 
   /**

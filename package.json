@@ -41,7 +41,8 @@
   },
   "files": [
     "/bin",
-    "/lib"
+    "/lib",
+    "/styles"
   ],
   "homepage": "https://github.com/Euricom/pelckmans-cli",
   "keywords": [
@@ -54,7 +55,6 @@
   },
   "repository": "Euricom/pelckmans-cli",
   "scripts": {
-    "start": "node index.js",
     "posttest": "eslint . --ext .ts --config .eslintrc.json",
     "prepack": "rm -rf lib && tsc -b && oclif-dev readme",
     "test": "jest --passWithNoTests",

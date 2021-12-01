@@ -1,6 +1,7 @@
 import {Command, flags} from '@oclif/command';
 import {Project} from './project';
 import {choose, input} from './utility';
+import * as path from 'path';
 
 interface IOption {
   [key: string]: string;
@@ -18,13 +19,12 @@ class PelckmansCli extends Command {
   };
   static strict = false;
   protected boilerplates: IOption = {
-    nextjs: 'https://github.com/PsySolix/next-boilerplate',
-    memoria: 'https://github.com/PsySolix/memoria-boilerplate',
+    nextjs: 'https://github.com/Euricom/pelckmans-boilerplate-nextjs',
     other: 'https://github.com/PsySolix/demo-boilerplate',
   };
   protected themes: IOption = {
-    default: './styles/default.css',
-    minimal: './styles/minimal.css',
+    default: `${path.resolve(__dirname, '../styles/default.css')}`,
+    minimal: `${path.resolve(__dirname, '../styles/minimal.css')}`,
   };
 
   /**
@@ -79,7 +79,10 @@ class PelckmansCli extends Command {
       this.log,
     );
 
-    await project.generatProject();
+    const projectDir = await project.generateProject();
+
+    this.log(`\n\n${name} created! To get the project running locally:\n`);
+    this.log(`cd ${projectDir} && npm run dev`);
   }
 }
 
