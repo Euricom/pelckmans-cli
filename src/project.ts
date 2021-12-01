@@ -104,7 +104,7 @@ export class Project {
     fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
     return fs.rename(
       `${this.themePath}-copy`,
-      path.resolve(this.dir, 'style.css'),
+      path.resolve(this.dir, 'theme.css'),
       (err) => {
         if (err) {
           throw err;
