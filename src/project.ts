@@ -1,5 +1,4 @@
 const git = require('nodegit');
-import {exec} from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import {exit} from 'process';
@@ -13,7 +12,7 @@ const {spawn} = require('child_process');
 export class Project {
   log: Function;
   name: string;
-  deploy: string;
+  deploy: {provider: string; token:string; };
   themeName: string;
   themePath: string;
   type: string;
@@ -27,7 +26,7 @@ export class Project {
    * @param {string} themePath
    * @param {string} themeName
    * @param {string} repo
-   * @param {string} deploy
+   * @param {object} deploy
    * @param {function} logFn
    */
   constructor(
@@ -36,7 +35,7 @@ export class Project {
     themePath: string,
     themeName: string,
     repo: string,
-    deploy: string,
+    deploy: {provider: string; token:string; },
     logFn: Function,
   ) {
     this.name = name;
@@ -52,7 +51,7 @@ export class Project {
   /**
    * Start up project generation
    */
-  public async generatProject() {
+  public async generateProject() {
     try {
       spinner('start', `# Setting writable dir`);
       this.setWriteableDir();
@@ -70,64 +69,30 @@ export class Project {
       await this.applyTheme();
       spinner('stop', `DONE`);
 
-      spinner('start', `# Applying Environment variables: ${this.themePath}`);
+      spinner('start', `# Applying Environment variables`);
       this.applyEnvVars();
       spinner('stop', `DONE`);
 
-      spinner('start', `# Deploying with ${this.deploy}`);
-      await this.deployProject();
-      spinner('stop', 'DONE');
+      return this.dir;
     } catch (error) {
       this.triggerCliError((error as Error).message);
     }
   }
 
   /**
-   * Deploy project with selected deployment
-   * @protected
-   */
-  protected async deployProject(): Promise<void> {
-    if (this.deploy === 'none') {
-      return;
-    }
-    if (this.deploy === 'vercel') {
-      return new Promise((resolve, reject)=> {
-        const vercelToken = process.env.VERCEL_TOKEN || false;
-        if (!vercelToken) {
-          reject(new Error('No Vercel token set'));
-        }
-        const cliDir = process.cwd();
-
-        process.chdir(this.dir);
-        let error = '';
-        const vercelCmds = exec(`npm i vercel && vercel --token ${vercelToken}`);
-        vercelCmds.stdout.on('data', (data) => {
-          this.log(data.toString());
-        });
-        vercelCmds.stderr.on('data', (data) => {
-          error = data.toString();
-        });
-        vercelCmds.on('close', (code) => {
-          if (code === 0) {
-            resolve();
-          } else {
-            reject(new Error(error));
-          }
-        });
-        process.chdir(cliDir);
-      });
-    }
-  }
-  /**
    * Adds a .env file (that the boilerplates use) which contains the following:
    * PROJECT_TYPE
    * PROJECT_THEME
+   * PROJECT_DEPLOY_TOKEN
+   * PROJECT_DEPLOY_PROVIDER
    */
   protected applyEnvVars(): void {
-    const type = `PROJECT_TYPE=${this.type}`;
-    const theme = `PROJECT_THEME=${this.themeName}`;
-
-    fs.writeFileSync(`${this.dir}/.env`, `${type}\n${theme}`);
+    fs.writeFileSync(`${this.dir}/.env`,
+      `PROJECT_TYPE=${this.type}\n`+
+      `PROJECT_THEME=${this.themeName}\n`+
+      `PROJECT_DEPLOY_TOKEN=${this.deploy.token}\n`+
+      `PROJECT_DEPLOY_PROVIDER=${this.deploy.provider}\n`
+    );
   }
 
   /**
@@ -139,7 +104,7 @@ export class Project {
     fs.copyFileSync(this.themePath, `${this.themePath}-copy`);
     return fs.rename(
       `${this.themePath}-copy`,
-      path.resolve(this.dir, 'style.css'),
+      path.resolve(this.dir, 'theme.css'),
       (err) => {
         if (err) {
           throw err;
@@ -176,10 +141,8 @@ export class Project {
           if (code == 0) {
             resolve();
           } else {
-            const err = new Error('Unknown error during dependency' +
-              ' installation...');
-            reject(err);
-            throw new Error('Unknown error during dependency installation...');
+            reject(new Error('Unknown error during dependency' +
+              ' installation...'));
           }
         });
       });
