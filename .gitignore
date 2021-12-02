@@ -4,8 +4,8 @@
 /.nyc_output
 /dist
 /lib
-/package-lock.json
 /tmp
 node_modules
 generated/*
 __PROJECTS__/*
+.DS_Store
