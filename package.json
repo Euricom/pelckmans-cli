@@ -57,7 +57,7 @@
   "repository": "Euricom/pelckmans-cli",
   "scripts": {
     "posttest": "eslint . --ext .ts --config .eslintrc.json",
-    "prepack": "rm -rf bin && tsc -b && oclif-dev readme",
+    "prepack": "rm -rf bin && tsc",
     "test": "jest --passWithNoTests",
     "version": "oclif-dev readme && git add README.md",
     "build": "tsc"
