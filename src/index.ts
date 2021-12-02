@@ -89,4 +89,4 @@ class PelckmansCli extends Command {
 }
 
 PelckmansCli.run()
-.then(() => {}, (require('@oclif/errors/handle')))
+  .then(() => {}, (require('@oclif/errors/handle')));
