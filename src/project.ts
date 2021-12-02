@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 const git = require('nodegit');
 import * as fs from 'fs';
 import * as path from 'path';

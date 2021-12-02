@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import cli from 'cli-ux';
 import * as inquirer from 'inquirer';
 
