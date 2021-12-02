@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 import {Command, flags} from '@oclif/command';
 import {Project} from './project';
 import {choose, input} from './utility';
@@ -86,4 +88,5 @@ class PelckmansCli extends Command {
   }
 }
 
-export = PelckmansCli;
+PelckmansCli.run()
+.then(() => {}, (require('@oclif/errors/handle')))

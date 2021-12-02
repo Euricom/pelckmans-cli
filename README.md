@@ -16,7 +16,7 @@ $ npm install -g @euricom/pelckmans-cli
 $ pelckmans-cli COMMAND
 running command...
 $ pelckmans-cli (-v|--version|version)
-@euricom/pelckmans-cli/0.0.1 darwin-x64 node-v14.17.3
+@euricom/pelckmans-cli/0.0.4 darwin-x64 node-v14.17.0
 $ pelckmans-cli --help [COMMAND]
 USAGE
   $ pelckmans-cli COMMAND
