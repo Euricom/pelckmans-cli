@@ -101,7 +101,7 @@ class Project {
         if (fs.existsSync(packageJsonFile)) {
             process.chdir(this.dir);
             return new Promise((resolve, reject) => {
-                const npmInstall = spawn('npm', ['i']);
+                const npmInstall = spawn('npm', ['i', '--loglevel=error']);
                 npmInstall.stderr.on('data', (data) => {
                     throw new Error(data.toString());
                 });
