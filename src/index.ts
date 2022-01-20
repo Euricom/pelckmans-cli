@@ -21,8 +21,8 @@ class PelckmansCli extends Command {
   };
   static strict = false;
   protected boilerplates: IOption = {
-    nextjs: 'https://github.com/Euricom/pelckmans-boilerplate-nextjs',
-    other: 'https://github.com/PsySolix/demo-boilerplate',
+    memoria: 'https://github.com/Euricom/pelckmans-template-memoria2',
+    demoSite: 'https://github.com/Euricom/pelckmans-boilerplate-nextjs',
   };
   protected themes: IOption = {
     default: `${path.resolve(__dirname, '../styles/default.css')}`,
@@ -89,4 +89,4 @@ class PelckmansCli extends Command {
 }
 
 PelckmansCli.run()
-  .then(() => {}, (require('@oclif/errors/handle')));
+  .then(() => { }, (require('@oclif/errors/handle')));

@@ -12,8 +12,8 @@ class PelckmansCli extends command_1.Command {
     constructor() {
         super(...arguments);
         this.boilerplates = {
-            nextjs: 'https://github.com/Euricom/pelckmans-boilerplate-nextjs',
-            other: 'https://github.com/PsySolix/demo-boilerplate',
+            memoria: 'https://github.com/Euricom/pelckmans-template-memoria2',
+            demoSite: 'https://github.com/Euricom/pelckmans-boilerplate-nextjs',
         };
         this.themes = {
             default: `${path.resolve(__dirname, '../styles/default.css')}`,
